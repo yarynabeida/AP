@@ -12,4 +12,4 @@ Open command prompt and input these commands:
 8. pip install -r requirements.txt
 
 Then open and run myapp.py, input in command prompt:
-curl -v -XGET http://localhost:5000/api/v1/hello-world-2
+1. curl -v -XGET http://localhost:5000/api/v1/hello-world-2
