@@ -9,7 +9,6 @@ Open command prompt and input these commands:
 5. pip install virtualenv
 6. virtualenv space
 7. .\space\Scripts\activate
-8. pip install -r requirements.txt
 
 Then open and run myapp.py, input in command prompt:
 1. curl -v -XGET http://localhost:5000/api/v1/hello-world-2
