@@ -1,0 +1,433 @@
+openapi: 3.0.1
+info:
+  title: Note Service
+  description: 'This is a note service for sharing your notes!'
+  termsOfService: http://swagger.io/terms/
+  contact:
+    email: yulia.markiv.27@gmail.com
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.0
+tags:
+- name: note
+  description: Share your notes
+  externalDocs:
+    description: Find out more about your notes
+    url: http://swagger.io
+- name: note_service
+  description: Access to your notes
+  externalDocs:
+    description: Find out more about your notes
+    url: http://swagger.io
+- name: user
+  description: Operations with user
+  externalDocs:
+    description: Find out more about our users
+    url: http://swagger.io
+servers:
+- url: https://virtserver.swaggerhub.com/yuliamarkiv/NoteService/1.0.0
+
+paths:
+  /note:
+    post:
+        tags:
+          - note
+        summary: 'Add a note'
+        operationId: addNote
+        description: Add a note to the system
+        responses:
+          201:
+            description: note created
+          400:
+            description: 'invalid input, object invalid'
+          409:
+            description: an existing note already exists
+        security:
+          - note_auth:
+              - 'write:notes'
+              - 'read:notes'
+              - 'delete:notes'
+
+
+
+  /note/{id}:
+    get:
+      tags:
+      - note
+      summary: Find note by ID
+      description: Returns a single note
+      operationId: getNoteById
+      parameters:
+      - name: id
+        in: path
+        description: ID of note to return
+        required: true
+        schema:
+          type: integer
+          format: uuid
+      responses:
+        200:
+          description: successful operation
+          content:
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Note'
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        400:
+          description: Invalid ID supplied
+          content: {}
+        404:
+          description: Note not found
+          content: {}
+      security:
+      - api_key: []
+    put:
+      tags:
+        - note
+      summary: 'Edit a note'
+      operationId: editNote
+      description: edit a note to the system
+      parameters:
+        - in: path
+          name: id
+          description: id of note
+          required: true
+          schema:
+            type: integer
+            format: uuid
+      responses:
+        201:
+          description: note edited
+        400:
+          description: 'invalid input, object invalid'
+        403:
+          description: 'Exceed number of editors'
+      security:
+        - note_auth:
+           - 'write:notes'
+           - 'read:notes'
+           - 'delete:notes'
+
+  /note/{id}/delete:
+    delete:
+      tags:
+      - note
+      summary: Deletes a note
+      operationId: deleteNote
+      parameters:
+      - name: api_key
+        in: header
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: Note id to delete
+        required: true
+        schema:
+          type: integer
+          format: uuid
+      responses:
+        400:
+          description: Invalid ID supplied
+          content: {}
+        404:
+          description: Note not found
+          content: {}
+      security:
+      - note_auth:
+         - 'write:notes'
+         - 'read:notes'
+         - 'delete:notes'
+
+
+
+  /note_service:
+    get:
+      tags:
+      - note_service
+      summary: 'Show all notes'
+      operationId: showNote
+      description: Show notes
+      responses:
+        201:
+          description: show notes
+        400:
+          description: 'Error'
+      security:
+          - note_auth:
+              - 'write:notes'
+              - 'read:notes'
+              - 'delete:notes'
+
+  /user:
+    post:
+      tags:
+      - user
+      summary: Create user
+      description: This can only be done by the logged in user.
+      operationId: createUser
+      requestBody:
+        description: Created user object
+        content:
+          '*/*':
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
+      responses:
+        default:
+          description: successful operation
+          content: {}
+      x-codegen-request-body-name: body
+
+
+  /user/login:
+    get:
+      tags:
+      - user
+      summary: Logs user into the system
+      operationId: loginUser
+      parameters:
+      - name: username
+        in: query
+        description: The user name for login
+        required: true
+        schema:
+          type: string
+      - name: password
+        in: query
+        description: The password for login in clear text
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: successful operation
+          headers:
+            X-Rate-Limit:
+              description: calls per hour allowed by the user
+              schema:
+                type: integer
+                format: int32
+            X-Expires-After:
+              description: date in UTC when token expires
+              schema:
+                type: string
+                format: date-time
+          content:
+            application/xml:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: string
+        400:
+          description: Invalid username/password supplied
+          content: {}
+  /user/logout:
+    get:
+      tags:
+      - user
+      summary: Logs out current logged in user session
+      operationId: logoutUser
+      responses:
+        default:
+          description: successful operation
+          content: {}
+  /userstatistics/{id}:
+    get:
+      tags:
+      - user
+      summary: Get user statistics
+      description: Returns user statistics
+      operationId: getUserStatistics
+      parameters:
+      - name: id
+        in: path
+        required: true
+        explode: false
+        schema:
+          type: integer
+      responses:
+        200:
+          description: Show the user
+          content:
+             application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NoteStatistics'
+        400:
+          description: Invalid user id supplied
+          content: {}
+        404:
+          description: User not found
+          content: {}
+      security:
+        - api_key: []
+
+  /user/{id}:
+    put:
+      tags:
+        - user
+      summary: 'Update a user'
+      operationId: updateUser
+      description: update a user to the system
+      parameters:
+        - in: path
+          name: id
+          description: id of user
+          required: true
+          schema:
+            type: integer
+            format: uuid
+      responses:
+        201:
+          description: user updated
+        400:
+          description: 'invalid input, object invalid'
+      security:
+        - note_auth:
+           - 'write:notes'
+           - 'read:notes'
+           - 'delete:notes'
+  /user/{id}/delete:
+    delete:
+      tags:
+      - user
+      summary: Deletes a user
+      operationId: deleteUser
+      parameters:
+      - name: api_key
+        in: header
+        schema:
+          type: string
+      - name: id
+        in: path
+        description: User id to delete
+        required: true
+        schema:
+          type: integer
+          format: uuid
+      responses:
+        400:
+          description: Invalid ID supplied
+          content: {}
+        404:
+          description: User not found
+          content: {}
+      security:
+      - note_auth:
+         - 'write:notes'
+         - 'read:notes'
+         - 'delete:notes'
+
+
+
+
+components:
+  schemas:
+    Note:
+      required:
+      - id
+      - idUsers
+      - tag
+      - text
+      - idOwner
+      type: object
+      properties:
+        id:
+          type: integer
+          format: uuid
+        idUsers:
+          type: integer
+          format: uuid
+        tag:
+          $ref: '#/components/schemas/Tag'
+        name:
+          type: string
+          example: tag
+        text:
+          type: string
+          maxLength: 404
+        idOwner:
+          type: integer
+          format: uuid
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: uuid
+        username:
+          type: string
+        email:
+          type: string
+      xml:
+        name: User
+    Tag:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: uuid
+        name:
+          type: string
+      xml:
+        name: Tag
+
+
+
+    NoteStatistics:
+         required:
+         - id
+         - noteId
+         - time
+         - userId
+         type: object
+         properties:
+          id:
+            type: integer
+            format: uuid
+          noteId:
+            type: integer
+            format: uuid
+          time:
+            type: string
+            format: date-time
+          userId:
+            type: integer
+            format: uuid
+
+  requestBodies:
+    Note:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Note'
+      description: Note item to add
+    User:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/requestBodies/User'
+      description: Created user object
+      required: true
+
+
+  securitySchemes:
+    note_auth:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: http://noteservices.swagger.io/oauth/dialog
+          scopes:
+            'write:notes': write notes
+            'read:notes': read notes
+            'delete:notes': delete notes
+    api_key:
+      type: apiKey
+      name: api_key
+      in: header
