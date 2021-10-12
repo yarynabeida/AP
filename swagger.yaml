@@ -92,9 +92,20 @@ paths:
           schema:
             type: integer
             format: uuid
+      requestBody:
+        description: 'edit note'
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Note'
+        required: true
       responses:
         201:
           description: note edited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
         401:
           $ref: '#/components/responses/UnauthorizedError'   
         403:
@@ -108,10 +119,6 @@ paths:
       summary: Deletes a note
       operationId: deleteNote
       parameters:
-      - name: api_key
-        in: header
-        schema:
-          type: string
       - name: id
         in: path
         description: Note id to delete
@@ -154,7 +161,8 @@ paths:
           
         401:
           $ref: '#/components/responses/UnauthorizedError'
-      
+      security:
+      - note_auth: []
     
    
   /user:
@@ -219,9 +227,8 @@ paths:
       summary: Logs out current logged in user session
       operationId: logoutUser
       responses:
-        default:
+        200:
           description: successful operation
-          content: {}
           
       security:
         - note_auth: []
@@ -319,6 +326,9 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
         404:
           description: User not found
+      
+      security:
+        - note_auth: []
           
      
     
