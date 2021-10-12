@@ -4,7 +4,7 @@ info:
   description: 'This is a note service for sharing your notes!'
   termsOfService: http://swagger.io/terms/
   contact:
-    email: yulia.markiv.27@gmail.com
+    email: yulia.markiv.@gmail.com
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
