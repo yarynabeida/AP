@@ -64,7 +64,7 @@ paths:
         required: true
         schema:
           type: integer
-          format: uuid
+          format: int32
       responses:
         200:
           description: successful operation
@@ -91,7 +91,7 @@ paths:
           required: true
           schema:
             type: integer
-            format: uuid
+            format: int32
       requestBody:
         description: 'edit note'
         content:
@@ -125,7 +125,7 @@ paths:
         required: true
         schema:
           type: integer
-          format: uuid
+          format: int32
       responses:
         200:
           description:  "successful operation"
@@ -280,7 +280,7 @@ paths:
           required: true
           schema:
             type: integer
-            format: uuid
+            format: int32
       requestBody:
         description: 'Updated user object.'
         content:
@@ -314,7 +314,7 @@ paths:
         required: true
         schema:
           type: integer
-          format: uuid
+          format: int32
       responses:
         200:
           description:  "successful operation. User deleted"
@@ -347,10 +347,15 @@ components:
       properties:
         id:
           type: integer
-          format: uuid
+          format: int32
         idUsers:
-          type: integer
-          format: uuid
+          type:  array
+          format: int32
+          items: 
+           $ref: '#/components/schemas/NoteStatistics'
+          maxLength: 5
+          
+          
         tag:
           $ref: '#/components/schemas/Tag'
         name:
@@ -361,13 +366,13 @@ components:
           maxLength: 404
         idOwner:
           type: integer
-          format: uuid
+          format: int32
     User:
       type: object
       properties:
         id:
           type: integer
-          format: uuid
+          format: int32
         username:
           type: string
         email:
@@ -378,7 +383,7 @@ components:
       properties:
         id:
           type: integer
-          format: uuid
+          format: int32
         name:
           type: string
    
@@ -393,16 +398,16 @@ components:
          properties:
           id:
             type: integer
-            format: uuid
+            format: int32
           noteId:
             type: integer
-            format: uuid
+            format: int32
           time:
             type: string
             format: date-time
           userId:
             type: integer
-            format: uuid
+            format: int32
       
   
   securitySchemes:
