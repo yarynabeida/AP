@@ -26,7 +26,7 @@ tags:
     description: Find out more about our users
     url: http://swagger.io
 servers:
-- url: https://virtserver.swaggerhub.com/yuliamarkiv/NoteService/1.0.0
+- url: http://127.0.0.0:5000/api/v2
 
 paths:
   /note:
@@ -37,19 +37,18 @@ paths:
         operationId: addNote
         description: Add a note to the system
         responses:
-          201:
-            description: note created
-          400:
-            description: 'invalid input, object invalid'
-          409:
-            description: an existing note already exists
+         200:
+          description: "successful operation"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+         401:
+          $ref: '#/components/responses/UnauthorizedError'     
         security:
-          - note_auth:
-              - 'write:notes'
-              - 'read:notes'
-              - 'delete:notes'
-
-
+         - note_auth: []
+    
+      
 
   /note/{id}:
     get:
@@ -70,20 +69,15 @@ paths:
         200:
           description: successful operation
           content:
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/Note'
             application/json:
               schema:
                 $ref: '#/components/schemas/Note'
-        400:
-          description: Invalid ID supplied
-          content: {}
+        401:
+          $ref: '#/components/responses/UnauthorizedError'   
         404:
-          description: Note not found
-          content: {}
+          description: "Note not found"
       security:
-      - api_key: []
+      - note_auth: []
     put:
       tags:
         - note
@@ -101,17 +95,13 @@ paths:
       responses:
         201:
           description: note edited
-        400:
-          description: 'invalid input, object invalid'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'   
         403:
           description: 'Exceed number of editors'
       security:
-        - note_auth:
-           - 'write:notes'
-           - 'read:notes'
-           - 'delete:notes'
-
-  /note/{id}/delete:
+      - note_auth: []
+  
     delete:
       tags:
       - note
@@ -130,38 +120,43 @@ paths:
           type: integer
           format: uuid
       responses:
-        400:
-          description: Invalid ID supplied
-          content: {}
+        200:
+          description:  "successful operation"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
         404:
-          description: Note not found
-          content: {}
+          description: "Note not found"
       security:
-      - note_auth:
-         - 'write:notes'
-         - 'read:notes'
-         - 'delete:notes'
-
-
-
+      - note_auth: []
+         
+         
+         
   /note_service:
     get:
       tags:
       - note_service
-      summary: 'Show all notes'
+      summary: 'Show all your notes'
       operationId: showNote
       description: Show notes
       responses:
         201:
           description: show notes
-        400:
-          description: 'Error'
-      security:
-          - note_auth:
-              - 'write:notes'
-              - 'read:notes'
-              - 'delete:notes'
-
+          content:
+             application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Note'
+          
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+      
+    
+   
   /user:
     post:
       tags:
@@ -170,19 +165,24 @@ paths:
       description: This can only be done by the logged in user.
       operationId: createUser
       requestBody:
-        description: Created user object
-        content:
-          '*/*':
+         description: Created user object
+         content:
+          'application/json':
             schema:
               $ref: '#/components/schemas/User'
-        required: true
+         required: true
       responses:
-        default:
-          description: successful operation
-          content: {}
-      x-codegen-request-body-name: body
-
-
+        200:
+          description: "successful operation. User is registered"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        400:
+          description: "User with such username already exists"
+       
+  
+    
   /user/login:
     get:
       tags:
@@ -205,27 +205,13 @@ paths:
       responses:
         200:
           description: successful operation
-          headers:
-            X-Rate-Limit:
-              description: calls per hour allowed by the user
-              schema:
-                type: integer
-                format: int32
-            X-Expires-After:
-              description: date in UTC when token expires
-              schema:
-                type: string
-                format: date-time
           content:
-            application/xml:
-              schema:
-                type: string
             application/json:
               schema:
                 type: string
-        400:
-          description: Invalid username/password supplied
-          content: {}
+        401:
+          $ref: '#/components/responses/InvalidCredentialsError'
+          
   /user/logout:
     get:
       tags:
@@ -236,6 +222,12 @@ paths:
         default:
           description: successful operation
           content: {}
+          
+      security:
+        - note_auth: []
+        
+        
+        
   /userstatistics/{id}:
     get:
       tags:
@@ -259,15 +251,14 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/NoteStatistics'
-        400:
-          description: Invalid user id supplied
-          content: {}
+        
+        401:
+          $ref: '#/components/responses/UnauthorizedError'  
         404:
-          description: User not found
-          content: {}
+          description: "User with that id was not found"
       security:
-        - api_key: []
-
+        - note_auth: []
+    
   /user/{id}:
     put:
       tags:
@@ -283,27 +274,33 @@ paths:
           schema:
             type: integer
             format: uuid
+      requestBody:
+        description: 'Updated user object.'
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+        required: true
       responses:
-        201:
-          description: user updated
-        400:
+         200:
+          description:  "successful operation"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+         401:
+          $ref: '#/components/responses/UnauthorizedError'
+         404:
           description: 'invalid input, object invalid'
       security:
-        - note_auth:
-           - 'write:notes'
-           - 'read:notes'
-           - 'delete:notes'
-  /user/{id}/delete:
+        - note_auth: []
+      
     delete:
       tags:
       - user
       summary: Deletes a user
       operationId: deleteUser
       parameters:
-      - name: api_key
-        in: header
-        schema:
-          type: string
       - name: id
         in: path
         description: User id to delete
@@ -312,26 +309,26 @@ paths:
           type: integer
           format: uuid
       responses:
-        400:
-          description: Invalid ID supplied
-          content: {}
+        200:
+          description:  "successful operation. User deleted"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
         404:
           description: User not found
-          content: {}
-      security:
-      - note_auth:
-         - 'write:notes'
-         - 'read:notes'
-         - 'delete:notes'
-
-
-
-
+          
+     
+    
+        
+    
+         
 components:
   schemas:
     Note:
       required:
-      - id
       - idUsers
       - tag
       - text
@@ -365,8 +362,7 @@ components:
           type: string
         email:
           type: string
-      xml:
-        name: User
+    
     Tag:
       type: object
       properties:
@@ -375,14 +371,11 @@ components:
           format: uuid
         name:
           type: string
-      xml:
-        name: Tag
-
-
-
+   
+          
+          
     NoteStatistics:
          required:
-         - id
          - noteId
          - time
          - userId
@@ -400,34 +393,16 @@ components:
           userId:
             type: integer
             format: uuid
-
-  requestBodies:
-    Note:
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Note'
-      description: Note item to add
-    User:
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/requestBodies/User'
-      description: Created user object
-      required: true
-
-
+      
+  
   securitySchemes:
     note_auth:
-      type: oauth2
-      flows:
-        implicit:
-          authorizationUrl: http://noteservices.swagger.io/oauth/dialog
-          scopes:
-            'write:notes': write notes
-            'read:notes': read notes
-            'delete:notes': delete notes
-    api_key:
-      type: apiKey
-      name: api_key
-      in: header
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    UnauthorizedError:
+      description: "JWT token was not provided or it is invalid"
+    InvalidCredentialsError:
+      description: "Provided credentials are invalid"
+  
