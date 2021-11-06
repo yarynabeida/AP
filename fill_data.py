@@ -3,8 +3,8 @@ from models import Session, User, Tag, Note, NoteStatistics
 session = Session()
 
 # filling User table without any links
-user_1 = User(id=1, name='Jake', email='jakemail@gmail.com')
-user_2 = User(id=2, name='Stanley', email='stanleymail@gmail.com')
+user_1 = User(id=1, name='Jake', email='jakemail@gmail.com', password='12345')
+user_2 = User(id=2, name='Stanley', email='stanleymail@gmail.com', password='1abc')
 
 # filling Tag table without any links
 tag_1 = Tag(id=1, name='#business')

@@ -40,6 +40,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, nullable=False)
     name = Column(VARCHAR(length=45), nullable=False)
     email = Column(VARCHAR(length=45), nullable=False)
+    password = Column(VARCHAR(length=45), nullable=False)
 
     # creating link to Note using NoteStatistics table
     notes = relationship("NoteStatistics", back_populates="user")
@@ -51,6 +52,7 @@ class User(Base):
                f"- Id\t: {self.id}\n" \
                f"- Name\t: {self.name}\n" \
                f"- Email\t: {self.email}\n" \
+               f"- Password\t: {self.password}\n" \
                f"--------------------------------------------\n"
 
 
