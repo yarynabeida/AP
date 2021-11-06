@@ -3,7 +3,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session, relationship
 
-engine = create_engine("mysql://root:A2452756b@127.0.0.1/my_db")
+# engine = create_engine("mysql://root:A2452756b@127.0.0.1/my_db")
+engine = create_engine("mysql://root:123abc!!!@127.0.0.1:3306/my_db")
 
 SessionFactory = sessionmaker(bind=engine)
 
