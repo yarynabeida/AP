@@ -1,7 +1,11 @@
 from flask import Flask
 from waitress import serve
-api = Flask(__name__)
+# from blueprint import api_blueprint
+
 STUDENT_ID = 2
+
+api = Flask(__name__)
+# api.register_blueprint(api_blueprint)
 
 
 @api.route('/api/v1/hello-world-3')
@@ -16,3 +20,5 @@ if __name__ == "__main__":
 # waitress-serve --port=5000 myapp:api
 
 # http://localhost:5000/api/v1/hello-world-3
+
+# curl -X POST http://localhost:5000/user
