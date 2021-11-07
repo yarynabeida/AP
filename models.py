@@ -40,7 +40,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, nullable=False)
     name = Column(VARCHAR(length=45), nullable=False)
     email = Column(VARCHAR(length=45), nullable=False)
-    password = Column(VARCHAR(length=45), nullable=False)
+    password = Column(VARCHAR(length=2000), nullable=False)
 
     # creating link to Note using NoteStatistics table
     notes = relationship("NoteStatistics", back_populates="user")
