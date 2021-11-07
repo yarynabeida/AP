@@ -1,6 +1,6 @@
 from flask import jsonify, request
-from schemes import UserSchema
-from models import Session, User
+from schemes import UserSchema, TagSchema, NoteSchema, NoteStatisticsSchema
+from models import Session, User, Tag, Note, NoteStatistics
 from marshmallow import ValidationError
 from flask import Blueprint
 from flask_bcrypt import Bcrypt
@@ -136,4 +136,53 @@ def delete_user(id):
     session.delete(user_find)
     session.commit()
 
+    return jsonify(result)
+
+
+@api_blueprint.route('/note', methods=['POST'])
+def create_note():
+    session = Session()
+
+    data = request.get_json()
+    if not data:
+        return {"message": "No input data provided"}, 400
+    if 'idTag' not in data or 'idOwner' not in data:
+        return {"message": "No input data provided"}, 400
+
+    # checking name
+    note_find = session.query(Note).filter_by(name=data['name']).first()
+    if note_find:
+        # print(user_find)
+        return {"message": "Note with such name already exists"}, 400
+
+    # work with the tag
+    tag_find = session.query(Tag).filter_by(name=data['idTag']).first()
+    if tag_find:
+        data['idTag'] = tag_find.id
+    else:
+        t_data = {'name': data['idTag']}
+        tag_data = TagSchema().load(t_data)
+        the_tag = Tag(**tag_data)
+        session.add(the_tag)
+        session.commit()
+
+        tag_find = session.query(Tag).filter_by(name=data['idTag']).first()
+        data['idTag'] = tag_find.id
+        # print(tag_find.id)
+
+    # checking the author
+    user_find = session.query(User).filter_by(id=data['idOwner']).first()
+    if not user_find:
+        return {"message": "Provided credentials are invalid"}, 401
+
+    try:
+        note_data = NoteSchema().load(data)
+    except ValidationError as err:
+        return err.messages, 422
+
+    the_note = Note(**note_data)
+    session.add(the_note)
+    session.commit()
+
+    result = NoteSchema().dump(the_note)
     return jsonify(result)

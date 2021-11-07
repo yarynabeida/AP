@@ -25,4 +25,4 @@ class NoteStatisticsSchema(Schema):
 
 class TagSchema(Schema):
     id = fields.Int()
-    name = fields.Str
+    name = fields.Str()
