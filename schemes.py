@@ -18,7 +18,7 @@ class NoteSchema(Schema):
 
 class NoteStatisticsSchema(Schema):
     id = fields.Int()
-    time = fields.Date()
+    time = fields.Str()
     userId = fields.Int()
     noteId = fields.Int()
 

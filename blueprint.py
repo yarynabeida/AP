@@ -4,6 +4,7 @@ from models import Session, User, Tag, Note, NoteStatistics
 from marshmallow import ValidationError
 from flask import Blueprint
 from flask_bcrypt import Bcrypt
+from datetime import datetime
 
 
 api_blueprint = Blueprint('api_blueprint', __name__)
@@ -139,6 +140,20 @@ def delete_user(id):
     return jsonify(result)
 
 
+@api_blueprint.route('/userstatistics/<int:id>', methods=['GET'])
+def get_user_statistics(id):
+    session = Session()
+
+    statistics_find = session.query(NoteStatistics).filter_by(userId=id).all()
+    if not statistics_find:
+        return {"message": "User with such username does not exists"}, 401
+    print(statistics_find)
+    result = []
+    for stat in statistics_find:
+        result.append(NoteStatisticsSchema().dump(stat))
+    return jsonify(result)
+
+
 @api_blueprint.route('/note', methods=['POST'])
 def create_note():
     session = Session()
@@ -183,6 +198,105 @@ def create_note():
     the_note = Note(**note_data)
     session.add(the_note)
     session.commit()
+    note_find = session.query(Note).filter_by(name=data['name']).first()
+
+    now = datetime.now()
+    formatted_date = now.strftime('%Y-%m-%d %H:%M:%S')
+    data_for_statistic = {'time': formatted_date, 'userId': data['idOwner'], 'noteId': note_find.id}
+
+    try:
+        statistic_data = NoteStatisticsSchema().load(data_for_statistic)
+    except ValidationError as err:
+        return err.messages, 422
+    the_statistic = NoteStatistics(**statistic_data)
+    session.add(the_statistic)
+    session.commit()
 
     result = NoteSchema().dump(the_note)
+    return jsonify(result)
+
+
+@api_blueprint.route('/note/<int:id>', methods=['GET'])
+def get_note(id):
+    session = Session()
+
+    note_find = session.query(Note).filter_by(id=id).first()
+    if not note_find:
+        return {"message": "Note with such id does not exists"}, 401
+
+    result = NoteSchema().dump(note_find)
+    return jsonify(result)
+
+
+@api_blueprint.route('/note/<int:id>', methods=['PUT'])
+def update_note(id):
+    session = Session()
+
+    data = request.get_json()
+    if not data:
+        return {"message": "No input data provided"}, 400
+
+    note_find = session.query(Note).filter_by(id=id).first()
+    if not note_find:
+        return {"message": "Note with such id does not exists"}, 401
+
+    # checking if suitable new name
+    if 'name' in data:
+        check_note = session.query(Note).filter_by(name=data['name']).first()
+    else:
+        check_note = None
+    if check_note:
+        return {"message": "Note with such username already exists"}, 400
+
+    # getting attributes of Note class
+    attributes = Note.__dict__.keys()
+
+    # updating
+    for key, value in data.items():
+        if key == 'id':
+            return {"message": "You can not change id"}, 403
+
+        if key not in attributes:
+            return {"message": "Invalid input data provided"}, 404
+
+        if key == 'idOwner':
+            return {"message": "You can not change idOwner"}, 403
+
+        setattr(note_find, key, value)
+
+    # commit
+    session.commit()
+
+    note_find = session.query(Note).filter_by(id=id).first()
+    result = NoteSchema().dump(note_find)
+
+    return jsonify(result)
+
+
+@api_blueprint.route('/note/<int:id>', methods=['DELETE'])
+def delete_note(id):
+    session = Session()
+
+    note_find = session.query(Note).filter_by(id=id).first()
+    if not note_find:
+        return {"message": "Note with such id does not exists"}, 401
+
+    result = NoteSchema().dump(note_find)
+
+    session.delete(note_find)
+    session.commit()
+
+    return jsonify(result)
+
+
+@api_blueprint.route('/note_service', methods=['GET'])
+def get_service():
+    session = Session()
+
+    find = session.query(Note).all()
+
+    result = []
+    for note in find:
+        result.append(NoteSchema().dump(note))
+
     return jsonify(result)
