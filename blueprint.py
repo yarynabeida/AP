@@ -18,10 +18,7 @@ def create_user():
         return {"message": "No input data provided"}, 400
 
     if data['password']:
-        print(data['password'])
         data['password'] = Bcrypt().generate_password_hash(data['password']).decode('utf - 8')
-        print(data['password'])
-        # data['password'] = data['password'][:10]
     else:
         # check code + message change
         return {"message": "No input data provided"}, 400
