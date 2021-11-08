@@ -349,3 +349,17 @@ def add_user_to_note():
 
     result = NoteStatisticsSchema().dump(data_for_statistic)
     return jsonify(result)
+
+
+@api_blueprint.route('/note_editors/<int:id>', methods=['GET'])
+def get_note_editors(id):
+    session = Session()
+
+    stat_find = session.query(NoteStatistics).filter_by(noteId=id).all()
+    if not stat_find:
+        return {"message": "Note with such id does not exists"}, 401
+
+    result = {'editors': []}
+    for stat in stat_find:
+        result['editors'].append(stat.userId)
+    return jsonify(result)
