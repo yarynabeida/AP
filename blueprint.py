@@ -22,7 +22,7 @@ def create_user():
         data['password'] = Bcrypt().generate_password_hash(data['password']).decode('utf - 8')
     else:
         # check code + message change
-        return {"message": "No input data provided"}, 400
+        return {"message": "No password data provided"}, 400
 
     try:
         user_data = UserSchema().load(data)
@@ -30,16 +30,13 @@ def create_user():
         return err.messages, 422
 
     the_user = User(**user_data)
-    # print(the_user)
 
     user_find = session.query(User).filter_by(name=data['name']).first()
     if user_find:
-        # print(user_find)
         return {"message": "User with such username already exists"}, 400
 
     user_find = session.query(User).filter_by(email=data['email']).first()
     if user_find:
-        # print(user_find)
         return {"message": "User with such email already exists"}, 400
 
     session.add(the_user)
@@ -59,7 +56,6 @@ def login_user():
 
     user_find = session.query(User).filter_by(name=data['name']).first()
     if not user_find:
-        # print(user_find)
         return {"message": "User with such username does not exists"}, 401
 
     if not Bcrypt().check_password_hash(user_find.password, data['password']):
@@ -146,7 +142,7 @@ def get_user_statistics(id):
 
     statistics_find = session.query(NoteStatistics).filter_by(userId=id).all()
     if not statistics_find:
-        return {"message": "User with such username does not exists"}, 401
+        return {"message": "User with such id does not exists"}, 401
     print(statistics_find)
     result = []
     for stat in statistics_find:
