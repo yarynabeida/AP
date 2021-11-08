@@ -144,8 +144,7 @@ def get_user_statistics(id):
 
     result = []
     for stat in statistics_find:
-        note_find = session.query(Note).filter_by(id=stat.noteId).first()
-        result.append(NoteSchema().dump(note_find))
+        result.append(NoteStatisticsSchema().dump(stat))
 
     return jsonify(result)
 
@@ -296,6 +295,22 @@ def get_service():
     return jsonify(result)
 
 
+@api_blueprint.route('/note_service/<int:id>', methods=['GET'])
+def get_user_notes_by_id(id):
+    session = Session()
+
+    statistics_find = session.query(NoteStatistics).filter_by(userId=id).all()
+    if not statistics_find:
+        return {"message": "You have no records done"}, 401
+
+    result = []
+    for stat in statistics_find:
+        note_find = session.query(Note).filter_by(id=stat.noteId).first()
+        result.append(NoteSchema().dump(note_find))
+
+    return jsonify(result)
+
+
 @api_blueprint.route('/note_user', methods=['POST'])
 def add_user_to_note():
     session = Session()
@@ -318,7 +333,6 @@ def add_user_to_note():
             return {"message": "Too many users are editing"}
         for stat in statistics_find:
             if int(data['userId']) == stat.userId:
-                print(1)
                 return {"message": "You already have the access"}
 
     now = datetime.now()
