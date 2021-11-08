@@ -125,6 +125,11 @@ def delete_user(id):
     if not user_find:
         return {"message": "User with such id does not exists"}, 404
 
+    # перевірка на видалення
+    stat_find = session.query(NoteStatistics).filter_by(userId=id).first()
+    if stat_find:
+        return {"message": "This user has articles"}, 403
+
     result = UserSchema().dump(user_find)
 
     session.delete(user_find)
@@ -273,8 +278,12 @@ def delete_note(id):
     if not note_find:
         return {"message": "Note with such id does not exists"}, 404
 
-    result = NoteSchema().dump(note_find)
+    stat_find = session.query(NoteStatistics).filter_by(noteId=note_find.id).all()
+    for stat in stat_find:
+        session.delete(stat)
+    session.commit()
 
+    result = NoteSchema().dump(note_find)
     session.delete(note_find)
     session.commit()
 
