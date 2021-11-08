@@ -83,7 +83,6 @@ def update_user(id):
     else:
         check_user = None
     if check_user:
-        # print(user_find)
         return {"message": "User with such username already exists"}, 400
 
     # checking if suitable new email
@@ -92,7 +91,6 @@ def update_user(id):
     else:
         check_user = None
     if check_user:
-        # print(user_find)
         return {"message": "User with such email already exists"}, 400
 
     # getting attributes of User class
@@ -143,7 +141,7 @@ def get_user_statistics(id):
     statistics_find = session.query(NoteStatistics).filter_by(userId=id).all()
     if not statistics_find:
         return {"message": "User with such id does not exists"}, 401
-    print(statistics_find)
+
     result = []
     for stat in statistics_find:
         result.append(NoteStatisticsSchema().dump(stat))
@@ -163,7 +161,6 @@ def create_note():
     # checking name
     note_find = session.query(Note).filter_by(name=data['name']).first()
     if note_find:
-        # print(user_find)
         return {"message": "Note with such name already exists"}, 400
 
     # work with the tag
@@ -179,7 +176,6 @@ def create_note():
 
         tag_find = session.query(Tag).filter_by(name=data['idTag']).first()
         data['idTag'] = tag_find.id
-        # print(tag_find.id)
 
     # checking the author
     user_find = session.query(User).filter_by(id=data['idOwner']).first()
