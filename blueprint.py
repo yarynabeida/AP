@@ -140,11 +140,13 @@ def get_user_statistics(id):
 
     statistics_find = session.query(NoteStatistics).filter_by(userId=id).all()
     if not statistics_find:
-        return {"message": "User with such id does not exists"}, 401
+        return {"message": "You have no records done"}, 401
 
     result = []
     for stat in statistics_find:
-        result.append(NoteStatisticsSchema().dump(stat))
+        note_find = session.query(Note).filter_by(id=stat.noteId).first()
+        result.append(NoteSchema().dump(note_find))
+
     return jsonify(result)
 
 
@@ -291,4 +293,45 @@ def get_service():
     for note in find:
         result.append(NoteSchema().dump(note))
 
+    return jsonify(result)
+
+
+@api_blueprint.route('/note_user', methods=['POST'])
+def add_user_to_note():
+    session = Session()
+
+    data = request.get_json()
+    if not data:
+        return {"message": "No input data provided"}, 400
+
+    note_find = session.query(Note).filter_by(id=data['noteId']).first()
+    if not note_find:
+        return {"message": "Note with such id does not exists"}, 401
+
+    user_find = session.query(User).filter_by(id=data['userId']).first()
+    if not user_find:
+        return {"message": "User with such username does not exists"}, 400
+
+    statistics_find = session.query(NoteStatistics).filter_by(noteId=data['noteId']).all()
+    if statistics_find:
+        if len(statistics_find) > 5:
+            return {"message": "Too many users are editing"}
+        for stat in statistics_find:
+            if int(data['userId']) == stat.userId:
+                print(1)
+                return {"message": "You already have the access"}
+
+    now = datetime.now()
+    formatted_date = now.strftime('%Y-%m-%d %H:%M:%S')
+    data_for_statistic = {'time': formatted_date, 'userId': user_find.id, 'noteId': note_find.id}
+
+    try:
+        statistic_data = NoteStatisticsSchema().load(data_for_statistic)
+    except ValidationError as err:
+        return err.messages, 422
+    the_statistic = NoteStatistics(**statistic_data)
+    session.add(the_statistic)
+    session.commit()
+
+    result = NoteStatisticsSchema().dump(data_for_statistic)
     return jsonify(result)
