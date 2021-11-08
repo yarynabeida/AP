@@ -21,7 +21,6 @@ def create_user():
     if data['password']:
         data['password'] = Bcrypt().generate_password_hash(data['password']).decode('utf - 8')
     else:
-        # check code + message change
         return {"message": "No password data provided"}, 400
 
     try:
@@ -56,10 +55,10 @@ def login_user():
 
     user_find = session.query(User).filter_by(name=data['name']).first()
     if not user_find:
-        return {"message": "User with such username does not exists"}, 401
+        return {"message": "User with such username does not exists"}, 404
 
     if not Bcrypt().check_password_hash(user_find.password, data['password']):
-        return {"message": "Provided credentials are invalid"}, 401
+        return {"message": "Provided credentials are invalid"}, 400
 
     result = UserSchema().dump(user_find)
     return jsonify(result)
@@ -75,7 +74,7 @@ def update_user(id):
 
     user_find = session.query(User).filter_by(id=id).first()
     if not user_find:
-        return {"message": "User with such id does not exists"}, 401
+        return {"message": "User with such id does not exists"}, 400
 
     # checking if suitable new username
     if 'name' in data:
@@ -102,7 +101,7 @@ def update_user(id):
             return {"message": "You can not change id"}, 403
 
         if key not in attributes:
-            return {"message": "Invalid input data provided"}, 404
+            return {"message": "Invalid input data provided"}, 400
 
         if key == 'password':
             value = Bcrypt().generate_password_hash(value).decode('utf - 8')
@@ -124,7 +123,7 @@ def delete_user(id):
 
     user_find = session.query(User).filter_by(id=id).first()
     if not user_find:
-        return {"message": "User with such id does not exists"}, 401
+        return {"message": "User with such id does not exists"}, 404
 
     result = UserSchema().dump(user_find)
 
@@ -140,7 +139,7 @@ def get_user_statistics(id):
 
     statistics_find = session.query(NoteStatistics).filter_by(userId=id).all()
     if not statistics_find:
-        return {"message": "You have no records done"}, 401
+        return {"message": "You have no records done"}, 404
 
     result = []
     for stat in statistics_find:
@@ -181,7 +180,7 @@ def create_note():
     # checking the author
     user_find = session.query(User).filter_by(id=data['idOwner']).first()
     if not user_find:
-        return {"message": "Provided credentials are invalid"}, 401
+        return {"message": "Provided credentials are invalid"}, 400
 
     try:
         note_data = NoteSchema().load(data)
@@ -215,7 +214,7 @@ def get_note(id):
 
     note_find = session.query(Note).filter_by(id=id).first()
     if not note_find:
-        return {"message": "Note with such id does not exists"}, 401
+        return {"message": "Note with such id does not exists"}, 404
 
     result = NoteSchema().dump(note_find)
     return jsonify(result)
@@ -231,7 +230,7 @@ def update_note(id):
 
     note_find = session.query(Note).filter_by(id=id).first()
     if not note_find:
-        return {"message": "Note with such id does not exists"}, 401
+        return {"message": "Note with such id does not exists"}, 404
 
     # checking if suitable new name
     if 'name' in data:
@@ -250,7 +249,7 @@ def update_note(id):
             return {"message": "You can not change id"}, 403
 
         if key not in attributes:
-            return {"message": "Invalid input data provided"}, 404
+            return {"message": "Invalid input data provided"}, 400
 
         if key == 'idOwner':
             return {"message": "You can not change idOwner"}, 403
@@ -272,7 +271,7 @@ def delete_note(id):
 
     note_find = session.query(Note).filter_by(id=id).first()
     if not note_find:
-        return {"message": "Note with such id does not exists"}, 401
+        return {"message": "Note with such id does not exists"}, 404
 
     result = NoteSchema().dump(note_find)
 
@@ -301,7 +300,7 @@ def get_user_notes_by_id(id):
 
     statistics_find = session.query(NoteStatistics).filter_by(userId=id).all()
     if not statistics_find:
-        return {"message": "You have no records done"}, 401
+        return {"message": "You have no records done"}, 404
 
     result = []
     for stat in statistics_find:
@@ -321,7 +320,7 @@ def add_user_to_note():
 
     note_find = session.query(Note).filter_by(id=data['noteId']).first()
     if not note_find:
-        return {"message": "Note with such id does not exists"}, 401
+        return {"message": "Note with such id does not exists"}, 400
 
     user_find = session.query(User).filter_by(id=data['userId']).first()
     if not user_find:
@@ -357,7 +356,7 @@ def get_note_editors(id):
 
     stat_find = session.query(NoteStatistics).filter_by(noteId=id).all()
     if not stat_find:
-        return {"message": "Note with such id does not exists"}, 401
+        return {"message": "Note with such id does not exists"}, 400
 
     result = {'editors': []}
     for stat in stat_find:
