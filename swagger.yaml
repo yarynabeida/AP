@@ -340,7 +340,7 @@ components:
     Note:
       required:
       - idUsers
-      - tag
+      - idTag
       - text
       - idOwner
       type: object
@@ -356,8 +356,9 @@ components:
           maxLength: 5
           
           
-        tag:
-          $ref: '#/components/schemas/Tag'
+        idTag:
+          type: integer
+          format: int32
         name:
           type: string
           example: tag
@@ -376,6 +377,8 @@ components:
         username:
           type: string
         email:
+          type: string
+        password:
           type: string
     
     Tag:

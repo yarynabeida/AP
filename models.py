@@ -3,7 +3,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, scoped_session, relationship
 
-engine = create_engine("mysql://root:A2452756b@127.0.0.1/my_db")
+# engine = create_engine("mysql://root:A2452756b@127.0.0.1/my_db")
+engine = create_engine("mysql://root:123abc!!!@127.0.0.1:3306/my_db")
 
 SessionFactory = sessionmaker(bind=engine)
 
@@ -39,6 +40,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, nullable=False)
     name = Column(VARCHAR(length=45), nullable=False)
     email = Column(VARCHAR(length=45), nullable=False)
+    password = Column(VARCHAR(length=2000), nullable=False)
 
     # creating link to Note using NoteStatistics table
     notes = relationship("NoteStatistics", back_populates="user")
@@ -50,6 +52,7 @@ class User(Base):
                f"- Id\t: {self.id}\n" \
                f"- Name\t: {self.name}\n" \
                f"- Email\t: {self.email}\n" \
+               f"- Password\t: {self.password}\n" \
                f"--------------------------------------------\n"
 
 

@@ -1,7 +1,14 @@
 from flask import Flask
 from waitress import serve
-api = Flask(__name__)
+from flask_bcrypt import Bcrypt
+from blueprint import api_blueprint
+
+
 STUDENT_ID = 2
+
+api = Flask(__name__)
+api.register_blueprint(api_blueprint)
+bcrypt = Bcrypt(api)
 
 
 @api.route('/api/v1/hello-world-3')
@@ -16,3 +23,4 @@ if __name__ == "__main__":
 # waitress-serve --port=5000 myapp:api
 
 # http://localhost:5000/api/v1/hello-world-3
+
