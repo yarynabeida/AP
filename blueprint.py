@@ -18,6 +18,9 @@ def create_user():
     if not data:
         return {"message": "No input data provided"}, 400
 
+    if 'id' in data:
+        return {"message": "You can not change id"}, 401
+
     if data['password']:
         data['password'] = Bcrypt().generate_password_hash(data['password']).decode('utf - 8')
     else:
@@ -71,6 +74,9 @@ def update_user(id):
     data = request.get_json()
     if not data:
         return {"message": "No input data provided"}, 400
+
+    if 'id' in data:
+        return {"message": "You can not change id"}, 401
 
     user_find = session.query(User).filter_by(id=id).first()
     if not user_find:
@@ -163,6 +169,9 @@ def create_note():
     if 'idTag' not in data or 'idOwner' not in data:
         return {"message": "No input data provided"}, 400
 
+    if 'id' in data:
+        return {"message": "You can not change id"}, 401
+
     # checking name
     note_find = session.query(Note).filter_by(name=data['name']).first()
     if note_find:
@@ -232,6 +241,9 @@ def update_note(id):
     data = request.get_json()
     if not data:
         return {"message": "No input data provided"}, 400
+
+    if 'id' in data:
+        return {"message": "You can not change id"}, 401
 
     note_find = session.query(Note).filter_by(id=id).first()
     if not note_find:
