@@ -5,15 +5,15 @@ from marshmallow import ValidationError
 from flask import Blueprint
 from flask_bcrypt import Bcrypt
 from datetime import datetime
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 
+session = Session()
 
 api_blueprint = Blueprint('api_blueprint', __name__)
 
 
 @api_blueprint.route('/user', methods=['POST'])
 def create_user():
-    session = Session()
-
     data = request.get_json()
     if not data:
         return {"message": "No input data provided"}, 400
@@ -50,26 +50,26 @@ def create_user():
 
 @api_blueprint.route('/user/login', methods=['GET'])
 def login_user():
-    session = Session()
+    auth = request.authorization
 
-    data = request.get_json()
-    if not data:
-        return {"message": "No input data provided"}, 400
+    if not auth or not auth.username or not auth.password:
+        return 'Wrong data provided', 401
 
-    user_find = session.query(User).filter_by(name=data['name']).first()
+    user_find = session.query(User).filter_by(name=auth.username).first()
     if not user_find:
         return {"message": "User with such username does not exists"}, 404
 
-    if not Bcrypt().check_password_hash(user_find.password, data['password']):
+    if not Bcrypt().check_password_hash(user_find.password, auth.password):
         return {"message": "Provided credentials are invalid"}, 400
 
-    result = UserSchema().dump(user_find)
-    return jsonify(result)
+    access_token = create_access_token(identity=user_find.id)
+    return jsonify({'token': access_token})
 
 
 @api_blueprint.route('/user/<int:id>', methods=['PUT'])
+@jwt_required()
 def update_user(id):
-    session = Session()
+    current_identity_id = get_jwt_identity()
 
     data = request.get_json()
     if not data:
@@ -81,6 +81,9 @@ def update_user(id):
     user_find = session.query(User).filter_by(id=id).first()
     if not user_find:
         return {"message": "User with such id does not exists"}, 400
+
+    if current_identity_id != user_find.id:
+        return 'Access is denied', 403
 
     # checking if suitable new username
     if 'name' in data:
@@ -117,19 +120,21 @@ def update_user(id):
     # commit
     session.commit()
 
-    user_find = session.query(User).filter_by(id=id).first()
-    result = UserSchema().dump(user_find)
-
-    return jsonify(result)
+    access_token = create_access_token(identity=user_find.id)
+    return jsonify({'token': access_token})
 
 
 @api_blueprint.route('/user/<int:id>', methods=['DELETE'])
+@jwt_required()
 def delete_user(id):
-    session = Session()
 
     user_find = session.query(User).filter_by(id=id).first()
     if not user_find:
         return {"message": "User with such id does not exists"}, 404
+
+    current_identity_id = get_jwt_identity()
+    if current_identity_id != user_find.id:
+        return 'Access is denied', 403
 
     # перевірка на видалення
     stat_find = session.query(NoteStatistics).filter_by(userId=id).first()
@@ -145,8 +150,16 @@ def delete_user(id):
 
 
 @api_blueprint.route('/userstatistics/<int:id>', methods=['GET'])
+@jwt_required()
 def get_user_statistics(id):
-    session = Session()
+
+    user_find = session.query(User).filter_by(id=id).first()
+    if not user_find:
+        return {"message": "User with such id does not exists"}, 404
+
+    current_identity_id = get_jwt_identity()
+    if current_identity_id != user_find.id:
+        return 'Access is denied', 403
 
     statistics_find = session.query(NoteStatistics).filter_by(userId=id).all()
     if not statistics_find:
@@ -160,8 +173,8 @@ def get_user_statistics(id):
 
 
 @api_blueprint.route('/note', methods=['POST'])
+@jwt_required()
 def create_note():
-    session = Session()
 
     data = request.get_json()
     if not data:
@@ -194,7 +207,11 @@ def create_note():
     # checking the author
     user_find = session.query(User).filter_by(id=data['idOwner']).first()
     if not user_find:
-        return {"message": "Provided credentials are invalid"}, 400
+        return {"message": "Provided idOwner are invalid"}, 400
+
+    current_identity_id = get_jwt_identity()
+    if current_identity_id != user_find.id:
+        return 'Access is denied', 403
 
     try:
         note_data = NoteSchema().load(data)
@@ -224,7 +241,6 @@ def create_note():
 
 @api_blueprint.route('/note/<int:id>', methods=['GET'])
 def get_note(id):
-    session = Session()
 
     note_find = session.query(Note).filter_by(id=id).first()
     if not note_find:
@@ -235,8 +251,8 @@ def get_note(id):
 
 
 @api_blueprint.route('/note/<int:id>', methods=['PUT'])
+@jwt_required()
 def update_note(id):
-    session = Session()
 
     data = request.get_json()
     if not data:
@@ -248,6 +264,15 @@ def update_note(id):
     note_find = session.query(Note).filter_by(id=id).first()
     if not note_find:
         return {"message": "Note with such id does not exists"}, 404
+
+    current_identity_id = get_jwt_identity()
+    access = False
+    statistics_find = session.query(NoteStatistics).filter_by(noteId=id).all()
+    for stat in statistics_find:
+        if current_identity_id == stat.userId:
+            access = True
+    if not access:
+        return 'Access is denied', 403
 
     # checking if suitable new name
     if 'name' in data:
@@ -283,12 +308,17 @@ def update_note(id):
 
 
 @api_blueprint.route('/note/<int:id>', methods=['DELETE'])
+@jwt_required()
 def delete_note(id):
-    session = Session()
 
     note_find = session.query(Note).filter_by(id=id).first()
     if not note_find:
         return {"message": "Note with such id does not exists"}, 404
+
+    current_identity_id = get_jwt_identity()
+    note_find = session.query(Note).filter_by(id=id).first()
+    if current_identity_id != note_find.idOwner:
+        return 'Access is denied', 403
 
     stat_find = session.query(NoteStatistics).filter_by(noteId=note_find.id).all()
     for stat in stat_find:
@@ -304,7 +334,6 @@ def delete_note(id):
 
 @api_blueprint.route('/note_service', methods=['GET'])
 def get_service():
-    session = Session()
 
     find = session.query(Note).all()
 
@@ -316,8 +345,12 @@ def get_service():
 
 
 @api_blueprint.route('/note_service/<int:id>', methods=['GET'])
+@jwt_required()
 def get_user_notes_by_id(id):
-    session = Session()
+
+    current_identity_id = get_jwt_identity()
+    if current_identity_id != id:
+        return 'Access is denied', 403
 
     statistics_find = session.query(NoteStatistics).filter_by(userId=id).all()
     if not statistics_find:
@@ -332,8 +365,8 @@ def get_user_notes_by_id(id):
 
 
 @api_blueprint.route('/note_user', methods=['POST'])
+@jwt_required()
 def add_user_to_note():
-    session = Session()
 
     data = request.get_json()
     if not data:
@@ -346,6 +379,11 @@ def add_user_to_note():
     user_find = session.query(User).filter_by(id=data['userId']).first()
     if not user_find:
         return {"message": "User with such username does not exists"}, 400
+
+    current_identity_id = get_jwt_identity()
+    note_find = session.query(Note).filter_by(id=data['noteId']).first()
+    if current_identity_id != note_find.idOwner:
+        return 'Access is denied', 403
 
     statistics_find = session.query(NoteStatistics).filter_by(noteId=data['noteId']).all()
     if statistics_find:
@@ -372,8 +410,13 @@ def add_user_to_note():
 
 
 @api_blueprint.route('/note_editors/<int:id>', methods=['GET'])
+@jwt_required()
 def get_note_editors(id):
-    session = Session()
+
+    current_identity_id = get_jwt_identity()
+    note_find = session.query(Note).filter_by(id=id).first()
+    if current_identity_id != note_find.idOwner:
+        return 'Access is denied', 403
 
     stat_find = session.query(NoteStatistics).filter_by(noteId=id).all()
     if not stat_find:
