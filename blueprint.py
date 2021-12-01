@@ -186,23 +186,18 @@ def create_note():
         return {"message": "You can not change id"}, 401
 
     # checking name
+
     note_find = session.query(Note).filter_by(name=data['name']).first()
     if note_find:
         return {"message": "Note with such name already exists"}, 400
 
     # work with the tag
-    tag_find = session.query(Tag).filter_by(name=data['idTag']).first()
-    if tag_find:
-        data['idTag'] = tag_find.id
-    else:
-        t_data = {'name': data['idTag']}
-        tag_data = TagSchema().load(t_data)
-        the_tag = Tag(**tag_data)
-        session.add(the_tag)
-        session.commit()
 
-        tag_find = session.query(Tag).filter_by(name=data['idTag']).first()
+    tag_find = session.query(Tag).filter_by(id=data['idTag']).first()
+    if tag_find :
         data['idTag'] = tag_find.id
+    elif tag_find is None:
+        return {"message": "Tag doesn't  exists"}, 400
 
     # checking the author
     user_find = session.query(User).filter_by(id=data['idOwner']).first()
@@ -264,6 +259,7 @@ def update_note(id):
     note_find = session.query(Note).filter_by(id=id).first()
     if not note_find:
         return {"message": "Note with such id does not exists"}, 404
+
 
     current_identity_id = get_jwt_identity()
     access = False
@@ -426,3 +422,5 @@ def get_note_editors(id):
     for stat in stat_find:
         result['editors'].append(stat.userId)
     return jsonify(result)
+
+
