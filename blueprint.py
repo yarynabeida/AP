@@ -106,8 +106,6 @@ def update_user(id):
 
     # updating
     for key, value in data.items():
-        if key == 'id':
-            return {"message": "You can not change id"}, 403
 
         if key not in attributes:
             return {"message": "Invalid input data provided"}, 400
@@ -196,8 +194,6 @@ def create_note():
     tag_find = session.query(Tag).filter_by(id=data['idTag']).first()
     if tag_find :
         data['idTag'] = tag_find.id
-    elif tag_find is None:
-        return {"message": "Tag doesn't  exists"}, 400
 
     # checking the author
     user_find = session.query(User).filter_by(id=data['idOwner']).first()
@@ -375,11 +371,6 @@ def add_user_to_note():
     user_find = session.query(User).filter_by(id=data['userId']).first()
     if not user_find:
         return {"message": "User with such username does not exists"}, 400
-
-    current_identity_id = get_jwt_identity()
-    note_find = session.query(Note).filter_by(id=data['noteId']).first()
-    if current_identity_id != note_find.idOwner:
-        return 'Access is denied', 403
 
     statistics_find = session.query(NoteStatistics).filter_by(noteId=data['noteId']).all()
     if statistics_find:
