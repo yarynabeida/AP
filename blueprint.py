@@ -106,8 +106,6 @@ def update_user(id):
 
     # updating
     for key, value in data.items():
-        if key == 'id':
-            return {"message": "You can not change id"}, 403
 
         if key not in attributes:
             return {"message": "Invalid input data provided"}, 400
@@ -186,22 +184,15 @@ def create_note():
         return {"message": "You can not change id"}, 401
 
     # checking name
+
     note_find = session.query(Note).filter_by(name=data['name']).first()
     if note_find:
         return {"message": "Note with such name already exists"}, 400
 
     # work with the tag
-    tag_find = session.query(Tag).filter_by(name=data['idTag']).first()
-    if tag_find:
-        data['idTag'] = tag_find.id
-    else:
-        t_data = {'name': data['idTag']}
-        tag_data = TagSchema().load(t_data)
-        the_tag = Tag(**tag_data)
-        session.add(the_tag)
-        session.commit()
 
-        tag_find = session.query(Tag).filter_by(name=data['idTag']).first()
+    tag_find = session.query(Tag).filter_by(id=data['idTag']).first()
+    if tag_find :
         data['idTag'] = tag_find.id
 
     # checking the author
@@ -264,6 +255,7 @@ def update_note(id):
     note_find = session.query(Note).filter_by(id=id).first()
     if not note_find:
         return {"message": "Note with such id does not exists"}, 404
+
 
     current_identity_id = get_jwt_identity()
     access = False
@@ -380,11 +372,6 @@ def add_user_to_note():
     if not user_find:
         return {"message": "User with such username does not exists"}, 400
 
-    current_identity_id = get_jwt_identity()
-    note_find = session.query(Note).filter_by(id=data['noteId']).first()
-    if current_identity_id != note_find.idOwner:
-        return 'Access is denied', 403
-
     statistics_find = session.query(NoteStatistics).filter_by(noteId=data['noteId']).all()
     if statistics_find:
         if len(statistics_find) > 5:
@@ -426,3 +413,5 @@ def get_note_editors(id):
     for stat in stat_find:
         result['editors'].append(stat.userId)
     return jsonify(result)
+
+

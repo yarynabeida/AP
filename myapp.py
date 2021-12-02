@@ -15,7 +15,6 @@ jwt = JWTManager(api)
 api.config["JWT_SECRET_KEY"] = "super-secret"
 api.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
 
-
 @api.route('/api/v1/hello-world-2')
 def hello():
     return f'Hello, World {STUDENT_ID}!'
