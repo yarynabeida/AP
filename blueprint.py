@@ -3,6 +3,7 @@ from schemes import UserSchema, TagSchema, NoteSchema, NoteStatisticsSchema
 from models import Session, User, Tag, Note, NoteStatistics
 from marshmallow import ValidationError
 from flask import Blueprint
+from flask_cors import cross_origin
 from flask_bcrypt import Bcrypt
 from datetime import datetime
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
@@ -13,18 +14,19 @@ api_blueprint = Blueprint('api_blueprint', __name__)
 
 
 @api_blueprint.route('/user', methods=['POST'])
+@cross_origin()
 def create_user():
     data = request.get_json()
-    if not data:
-        return {"message": "No input data provided"}, 400
+    if data is None or data['name'] == '' or data['password'] == '' or data['email'] == '':
+        return 'Wrong input data provided', 404
 
     if 'id' in data:
-        return {"message": "You can not change id"}, 401
+        return "You can not change id", 401
 
     if data['password']:
         data['password'] = Bcrypt().generate_password_hash(data['password']).decode('utf - 8')
     else:
-        return {"message": "No password data provided"}, 400
+        return "No password data provided", 400
 
     try:
         user_data = UserSchema().load(data)
@@ -35,38 +37,68 @@ def create_user():
 
     user_find = session.query(User).filter_by(name=data['name']).first()
     if user_find:
-        return {"message": "User with such username already exists"}, 400
+        return "User with such username already exists", 400
 
     user_find = session.query(User).filter_by(email=data['email']).first()
     if user_find:
-        return {"message": "User with such email already exists"}, 400
+        return "User with such email already exists", 400
 
     session.add(the_user)
     session.commit()
-
     result = UserSchema().dump(the_user)
     return jsonify(result)
 
 
-@api_blueprint.route('/user/login', methods=['GET'])
+@api_blueprint.route('/user/login', methods=['POST'])
+@cross_origin()
 def login_user():
-    auth = request.authorization
+    # auth = request.authorization
+    session = Session()
+    data = request.get_json()
+    # data.setHeader("Access-Control-Allow-Origin", "*")
 
-    if not auth or not auth.username or not auth.password:
-        return 'Wrong data provided', 401
+    # if not auth or not auth.username or not auth.password:
+    #     return 'Wrong data provided', 401
+    #
+    # user_find = session.query(User).filter_by(name=auth.username).first()
+    # if not user_find:
+    #     return {"message": "User with such username does not exists"}, 404
+    #
+    # if not Bcrypt().check_password_hash(user_find.password, auth.password):
+    #     return {"message": "Provided credentials are invalid"}, 400
 
-    user_find = session.query(User).filter_by(name=auth.username).first()
+    if data is None or data['username'] == '' or data['password'] == '':
+        return 'Wrong input data provided', 404
+
+    user = session.query(User).filter_by(name=data['username']).first()
+
+    if user is None:
+        return 'Invalid username provided', 404
+
+    if not Bcrypt().check_password_hash(user.password, data['password']):
+        return 'Invalid password provided', 400
+
+    access_token = create_access_token(identity=user.id)
+    session.close()
+
+    return jsonify({'id': user.id, 'token': access_token})
+
+
+@api_blueprint.route('/user/<int:id>', methods=['GET'])
+@cross_origin()
+@jwt_required()
+def get_user(id):
+
+    user_find = session.query(User).filter_by(id=id).first()
     if not user_find:
-        return {"message": "User with such username does not exists"}, 404
+        return {"message": "User with such id does not exists"}, 404
 
-    if not Bcrypt().check_password_hash(user_find.password, auth.password):
-        return {"message": "Provided credentials are invalid"}, 400
-
-    access_token = create_access_token(identity=user_find.id)
-    return jsonify({'token': access_token})
+    result = UserSchema().dump(user_find)
+    return jsonify(result)
 
 
 @api_blueprint.route('/user/<int:id>', methods=['PUT'])
+@cross_origin()
 @jwt_required()
 def update_user(id):
     current_identity_id = get_jwt_identity()
@@ -110,6 +142,9 @@ def update_user(id):
         if key not in attributes:
             return {"message": "Invalid input data provided"}, 400
 
+        if value == '':
+            continue
+
         if key == 'password':
             value = Bcrypt().generate_password_hash(value).decode('utf - 8')
 
@@ -117,12 +152,13 @@ def update_user(id):
 
     # commit
     session.commit()
+    result = UserSchema().dump(user_find)
 
-    access_token = create_access_token(identity=user_find.id)
-    return jsonify({'token': access_token})
+    return jsonify(result)
 
 
 @api_blueprint.route('/user/<int:id>', methods=['DELETE'])
+@cross_origin()
 @jwt_required()
 def delete_user(id):
 
@@ -148,6 +184,7 @@ def delete_user(id):
 
 
 @api_blueprint.route('/userstatistics/<int:id>', methods=['GET'])
+@cross_origin()
 @jwt_required()
 def get_user_statistics(id):
 
@@ -171,6 +208,7 @@ def get_user_statistics(id):
 
 
 @api_blueprint.route('/note', methods=['POST'])
+@cross_origin()
 @jwt_required()
 def create_note():
 
@@ -231,6 +269,7 @@ def create_note():
 
 
 @api_blueprint.route('/note/<int:id>', methods=['GET'])
+@cross_origin()
 def get_note(id):
 
     note_find = session.query(Note).filter_by(id=id).first()
@@ -242,6 +281,7 @@ def get_note(id):
 
 
 @api_blueprint.route('/note/<int:id>', methods=['PUT'])
+@cross_origin()
 @jwt_required()
 def update_note(id):
 
@@ -300,6 +340,7 @@ def update_note(id):
 
 
 @api_blueprint.route('/note/<int:id>', methods=['DELETE'])
+@cross_origin()
 @jwt_required()
 def delete_note(id):
 
@@ -325,6 +366,7 @@ def delete_note(id):
 
 
 @api_blueprint.route('/note_service', methods=['GET'])
+@cross_origin()
 def get_service():
 
     find = session.query(Note).all()
@@ -337,6 +379,7 @@ def get_service():
 
 
 @api_blueprint.route('/note_service/<int:id>', methods=['GET'])
+@cross_origin()
 @jwt_required()
 def get_user_notes_by_id(id):
 
@@ -357,6 +400,7 @@ def get_user_notes_by_id(id):
 
 
 @api_blueprint.route('/note_user', methods=['POST'])
+@cross_origin()
 @jwt_required()
 def add_user_to_note():
 
@@ -397,6 +441,7 @@ def add_user_to_note():
 
 
 @api_blueprint.route('/note_editors/<int:id>', methods=['GET'])
+@cross_origin()
 @jwt_required()
 def get_note_editors(id):
 
